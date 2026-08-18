@@ -11,7 +11,8 @@ resource "aws_iam_openid_connect_provider" "github" {
 
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.github_oidc[0].certificates[0].sha1_fingerprint]
+  # Include all certificates in the chain so thumbprint survives rotations
+  thumbprint_list = [for c in data.tls_certificate.github_oidc[0].certificates : c.sha1_fingerprint]
 }
 
 # ─────────────────────────────────────────────────────────────────────
