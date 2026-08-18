@@ -38,7 +38,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for .GitInfo in Hugo
+          fetch-depth: 0        # Required for .GitInfo in Hugo
+          submodules: recursive # Required: hugo-PaperMod theme is a git submodule
 
       # Configure AWS credentials via OIDC (no access keys!)
       - name: Configure AWS Credentials

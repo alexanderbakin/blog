@@ -81,3 +81,9 @@ variable "github_repo" {
   type        = string
   default     = ""
 }
+
+variable "github_repo_id_format" {
+  description = "GitHub repository in numeric-ID format 'owner@OWNERID/repo@REPOID'. GitHub's OIDC sub claim now uses immutable numeric IDs instead of names (e.g. 'repo:alexanderbakin@242987075/blog@1338101538:ref:refs/heads/main')"
+  type        = string
+  default     = ""
+}

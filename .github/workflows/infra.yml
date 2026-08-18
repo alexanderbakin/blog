@@ -30,6 +30,9 @@ env:
   TF_VAR_create_route53_zone: true
   TF_VAR_create_github_actions_role: true
   TF_VAR_github_repo: ${{ github.repository }}
+  # GitHub's OIDC sub claim now uses numeric IDs: owner@OWNERID/repo@REPOID
+  # IDs are immutable, so they're safe to hardcode here.
+  TF_VAR_github_repo_id_format: "alexanderbakin@242987075/blog@1338101538"
 
 jobs:
   # Plan (runs on both PR and push)

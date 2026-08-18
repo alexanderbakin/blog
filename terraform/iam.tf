@@ -37,7 +37,15 @@ data "aws_iam_policy_document" "terraform_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      # GitHub migrated sub claims from "owner/repo" to numeric-ID form
+      # "owner@USERID/repo@REPOID". Allow both formats during transition.
+      # See: https://github.blog/changelog/2026-08-10-github-actions-oidc-subject-claim-format-change/
+      # compact() drops any pattern whose variable is unset, so an empty
+      # variable can never widen the match to "repo::*" (all repos).
+      values = compact([
+        "repo:${var.github_repo}:*",
+        var.github_repo_id_format != "" ? "repo:${var.github_repo_id_format}:*" : "",
+      ])
     }
   }
 }
@@ -187,7 +195,15 @@ data "aws_iam_policy_document" "deploy_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      # GitHub migrated sub claims from "owner/repo" to numeric-ID form
+      # "owner@USERID/repo@REPOID". Allow both formats during transition.
+      # See: https://github.blog/changelog/2026-08-10-github-actions-oidc-subject-claim-format-change/
+      # compact() drops any pattern whose variable is unset, so an empty
+      # variable can never widen the match to "repo::*" (all repos).
+      values = compact([
+        "repo:${var.github_repo}:*",
+        var.github_repo_id_format != "" ? "repo:${var.github_repo_id_format}:*" : "",
+      ])
     }
   }
 }

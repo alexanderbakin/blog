@@ -7,7 +7,7 @@
 #   - your-handle     → your Twitter handle
 #   - your-blog-repo  → your blog repository name
 
-baseURL: "https://yourdomain.com/"
+baseURL: "https://alexanderbakin.com/"
 languageCode: "en-us"
 title: "Alex's Blog"
 theme: "hugo-PaperMod"
@@ -36,10 +36,10 @@ taxonomies:
 params:
   author: "Alex"
   description: "Personal blog about DevOps, cloud infrastructure, and software engineering"
-  github: "https://github.com/your-username"
+  github: "https://github.com/alexanderbakin"
   linkedin: "https://linkedin.com/in/your-profile"
   twitter: "https://twitter.com/your-handle"
-  repo: "https://github.com/your-username/your-blog-repo"
+  repo: "https://github.com/alexanderbakin/blog"
 
 menu:
   main:
