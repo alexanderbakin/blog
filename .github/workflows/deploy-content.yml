@@ -1,0 +1,104 @@
+# Content Deployment Pipeline (Hugo → S3 → CloudFront)
+# Triggered when blog content changes (not infrastructure).
+# No Terraform, just build + sync + invalidate.
+
+name: Deploy Content
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hugo-site/**"
+      - ".github/workflows/deploy-content.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  HUGO_VERSION: "0.164.0"
+  ASSETS_CACHE_MAX_AGE: "3600"
+  HTML_CACHE_MAX_AGE: "600"
+  CACHE_CONTROL_PUBLIC: "public, max-age="
+  CACHE_CONTROL_REVALIDATE: ", must-revalidate"
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: deploy-content
+      cancel-in-progress: true
+
+    steps:
+      # Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for .GitInfo in Hugo
+
+      # Configure AWS credentials via OIDC (no access keys!)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 900
+
+      # Setup Hugo
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
+
+      # Build static site from Markdown
+      - name: Hugo Build
+        run: |
+          cd hugo-site
+          hugo --minify --gc
+        env:
+          HUGO_ENVIRONMENT: production
+
+      # Deploy to S3
+      #
+      # Two-pass sync for optimal caching:
+      # - non-HTML assets → long cache (1hr)
+      # - HTML files → shorter cache (10min) so content updates fast
+      - name: Sync Assets to S3
+        run: |
+          aws s3 sync hugo-site/public/ \
+            s3://${{ vars.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "public, max-age=${{ env.ASSETS_CACHE_MAX_AGE }}, must-revalidate" \
+            --exclude "*.html" \
+            --exclude "*.xml" \
+            --no-progress
+
+      - name: Sync HTML to S3
+        run: |
+          aws s3 sync hugo-site/public/ \
+            s3://${{ vars.S3_BUCKET }}/ \
+            --delete \
+            --include "*.html" \
+            --include "*.xml" \
+            --cache-control "public, max-age=${{ env.HTML_CACHE_MAX_AGE }}, must-revalidate" \
+            --no-progress
+
+      # Invalidate CloudFront edge cache
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      # Smoke test
+      - name: Smoke Test
+        run: |
+          URL="${{ vars.SITE_URL }}"
+          echo "Checking $URL ..."
+          curl -sSf -o /dev/null -w "HTTP %{http_code}\n" "$URL"
+          echo "Deployment successful!"

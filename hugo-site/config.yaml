@@ -1,0 +1,57 @@
+# Blog configuration – Hugo
+#
+# IMPORTANT: Before deploying, replace ALL placeholder values below:
+#   - yourdomain.com  → your actual domain
+#   - your-username   → your GitHub username
+#   - your-profile    → your LinkedIn profile username
+#   - your-handle     → your Twitter handle
+#   - your-blog-repo  → your blog repository name
+
+baseURL: "https://yourdomain.com/"
+languageCode: "en-us"
+title: "Alex's Blog"
+theme: "hugo-PaperMod"
+enableRobotsTXT: true
+enableGitInfo: true
+
+# Use .Page bundles instead of leaf pages for clean URLs
+
+permalinks:
+  posts: "/:slug/"
+
+# Syntax highlighting
+markup:
+  highlight:
+    style: "monokai"
+    lineNos: true
+  goldmark:
+    renderer:
+      unsafe: true
+
+# Taxonomy
+taxonomies:
+  tag: "tags"
+  category: "categories"
+
+params:
+  author: "Alex"
+  description: "Personal blog about DevOps, cloud infrastructure, and software engineering"
+  github: "https://github.com/your-username"
+  linkedin: "https://linkedin.com/in/your-profile"
+  twitter: "https://twitter.com/your-handle"
+  repo: "https://github.com/your-username/your-blog-repo"
+
+menu:
+  main:
+    - identifier: "home"
+      name: "Home"
+      url: "/"
+      weight: 1
+    - identifier: "posts"
+      name: "Posts"
+      url: "/posts/"
+      weight: 2
+    - identifier: "about"
+      name: "About"
+      url: "/about/"
+      weight: 3

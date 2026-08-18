@@ -1,0 +1,47 @@
+```mermaid
+graph TB
+    USER["🌐 User"]
+    DNS["Route53 DNS<br/>Alias A / AAAA records"]
+
+    subgraph AWS Cloud
+        CF["CloudFront CDN<br/>• HTTPS redirect<br/>• Compression<br/>• Security headers<br/>• OAC auth"]
+        S3_ORIGIN["S3 Bucket<br/>• Static site origin<br/>• Versioning + encryption<br/>• Public access blocked"]
+        ACM["ACM Certificate<br/>us-east-1<br/>TLSv1.2_2021"]
+        CW["CloudWatch<br/>• Dashboard<br/>• Alarms"]
+        S3_LOGS["S3 Bucket<br/>• Access logs<br/>• 1yr retention"]
+    end
+
+    subgraph GitHub
+        GHA["GitHub Actions<br/>CI/CD Pipeline"]
+        OIDC["OIDC Provider<br/>IAM Role Assumption"]
+    end
+
+    subgraph Local
+        DEV["Developer<br/>hugo new post<br/>git push"]
+        HUGO["Hugo SSG<br/>Markdown → Static HTML"]
+    end
+
+    DEV -->|git push| GHA
+    GHA -->|OIDC| OIDC
+    OIDC -->|Assume IAM Role| S3_ORIGIN
+    HUGO -->|hugo build| GHA
+    GHA -->|terraform apply| S3_ORIGIN
+    GHA -->|cloudfront invalidation| CF
+
+    USER -->|HTTPS| DNS
+    DNS --> CF
+    CF --> S3_ORIGIN
+    ACM --> CF
+    S3_ORIGIN -.->|logs| S3_LOGS
+    CF -.->|metrics| CW
+
+    subgraph Pipeline Steps
+        S1["1. Checkout repo"]
+        S2["2. Setup Hugo"]
+        S3["3. hugo build"]
+        S4["4. Sync to S3"]
+        S5["5. Invalidate CloudFront"]
+    end
+
+    GHA --> S1 --> S2 --> S3 --> S4 --> S5
+```
