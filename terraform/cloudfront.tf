@@ -33,6 +33,12 @@ resource "aws_cloudfront_distribution" "blog" {
 
     cache_policy_id            = aws_cloudfront_cache_policy.blog.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.blog.id
+
+    # Rewrite /about → /about/index.html etc.
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite_index.arn
+    }
   }
 
   # Custom error responses
@@ -82,6 +88,15 @@ resource "aws_cloudfront_distribution" "blog" {
     # Prevent accidental deletion of the distribution
     prevent_destroy = true
   }
+}
+
+# CloudFront Function — rewrites directory paths to /index.html
+resource "aws_cloudfront_function" "rewrite_index" {
+  name    = replace(var.domain_name, ".", "-")
+  comment = "Rewrite /about → /about/index.html for S3 REST origin"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = file("${path.module}/cloudfront-function.js")
 }
 
 # Cache policy - aggressive caching for static assets
