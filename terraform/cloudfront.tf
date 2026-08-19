@@ -141,7 +141,7 @@ resource "aws_cloudfront_response_headers_policy" "blog" {
     }
 
     content_security_policy {
-      content_security_policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none';"
+      content_security_policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; frame-ancestors 'none';"
       override                = true
     }
   }
