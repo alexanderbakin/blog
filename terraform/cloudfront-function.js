@@ -19,8 +19,11 @@ function handler(event) {
     var request = event.request;
     var uri = request.uri;
 
-    // If the URI ends with a file extension, serve as-is.
-    if (uri.match(/\.[a-zA-Z0-9]+$/)) {
+    // If the URI ends with a known static-asset extension, serve as-is.
+    // A generic "ends with .anything" check would misfire on directory-style
+    // slugs that happen to contain a dot (e.g. /posts/aws-v1.2), treating
+    // them as files and skipping the /index.html rewrite below.
+    if (uri.match(/\.(html|xml|css|js|mjs|json|txt|ico|png|jpg|jpeg|gif|svg|webp|webmanifest|woff2?|ttf|eot|pdf|map)$/i)) {
         return request;
     }
 

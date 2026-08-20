@@ -28,6 +28,13 @@ provider "aws" {
 # Shared locals
 locals {
   domain_slug = replace(var.domain_name, ".", "-")
+
+  # TF_VAR_alert_email in CI resolves to "" (not unset) when the ALERT_EMAIL
+  # repo variable is missing, since GitHub Actions substitutes empty string
+  # for an undefined vars.* reference. Normalize that back to null so the
+  # count-gated alerting resources in monitoring.tf stay off instead of
+  # trying to create an SNS subscription/budget with an empty email.
+  alert_email = var.alert_email != null && var.alert_email != "" ? var.alert_email : null
 }
 
 # Data sources

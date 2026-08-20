@@ -51,10 +51,10 @@ resource "aws_sns_topic" "alerts" {
 
 # SNS email subscription
 resource "aws_sns_topic_subscription" "email" {
-  count     = var.alert_email != null ? 1 : 0
+  count     = local.alert_email != null ? 1 : 0
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "email"
-  endpoint  = var.alert_email
+  endpoint  = local.alert_email
 }
 
 # CloudWatch alarm - high error rate
@@ -80,7 +80,7 @@ resource "aws_cloudwatch_metric_alarm" "error_rate" {
 # Budget alarm — first 2 budgets are free. Emails directly (no SNS dependency).
 # Budgets work without the "Receive Billing Alerts" CloudWatch opt-in.
 resource "aws_budgets_budget" "monthly" {
-  count = var.alert_email != null ? 1 : 0
+  count = local.alert_email != null ? 1 : 0
 
   name         = "${local.domain_slug}-monthly-budget"
   budget_type  = "COST"
@@ -93,6 +93,6 @@ resource "aws_budgets_budget" "monthly" {
     threshold                  = 100
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
-    subscriber_email_addresses = [var.alert_email]
+    subscriber_email_addresses = [local.alert_email]
   }
 }

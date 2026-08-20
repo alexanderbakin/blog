@@ -14,4 +14,4 @@ I'm Alex - a DevOps / Cloud Infrastructure Engineer passionate about building re
 
 **This blog**: Built from scratch with Terraform + Hugo, deployed through GitHub Actions with OIDC, served from CloudFront with S3 origin and geo-restriction. [Check out the architecture](/posts/architecture-overview/).
 
-[GitHub](https://github.com/your-username) · [LinkedIn](https://linkedin.com/in/your-profile)
+[GitHub](https://github.com/alexanderbakin) · [LinkedIn](https://www.linkedin.com/in/bakin-alexander/)
