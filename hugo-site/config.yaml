@@ -10,7 +10,6 @@
 baseURL: "https://alexanderbakin.com/"
 languageCode: "en-us"
 title: "Alexander's Blog"
-copyright: "© 2026-present Alexander Bakin"
 theme: "hugo-PaperMod"
 enableRobotsTXT: true
 enableGitInfo: true
@@ -36,6 +35,8 @@ taxonomies:
 
 params:
   author: "Alexander Bakin"
+  footer:
+    hideCopyright: true
   description: "Personal blog about DevOps, cloud infrastructure, and software engineering"
   github: "https://github.com/alexanderbakin"
   linkedin: "https://www.linkedin.com/in/bakin-alexander/"
