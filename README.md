@@ -14,7 +14,7 @@ User → Route53 → CloudFront (HTTPS) → S3 (private, OAC only)
                               CloudWatch Alarms + Budget Alert
 ```
 
-> **Architecture diagram:** Rendered from `hugo-site/static/images/architecture.mmd` (Mermaid format) — also viewable in the architecture blog post at `/posts/architecture-overview/`.
+> **Architecture diagram:** `hugo-site/static/images/architecture-diagram.svg` - also viewable in the architecture blog post at `/meta/`.
 
 ## Features
 

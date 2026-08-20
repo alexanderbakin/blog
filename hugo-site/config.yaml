@@ -1,4 +1,4 @@
-# Blog configuration – Hugo
+# Blog configuration - Hugo
 #
 # IMPORTANT: Before deploying, replace ALL placeholder values below:
 #   - yourdomain.com  → your actual domain
@@ -9,7 +9,7 @@
 
 baseURL: "https://alexanderbakin.com/"
 languageCode: "en-us"
-title: "Alex's Blog"
+title: "Alexander's Blog"
 theme: "hugo-PaperMod"
 enableRobotsTXT: true
 enableGitInfo: true
@@ -34,7 +34,7 @@ taxonomies:
   category: "categories"
 
 params:
-  author: "Alex"
+  author: "Alexander"
   description: "Personal blog about DevOps, cloud infrastructure, and software engineering"
   github: "https://github.com/alexanderbakin"
   linkedin: "https://www.linkedin.com/in/bakin-alexander/"

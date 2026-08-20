@@ -4,7 +4,7 @@ date: 2026-08-14T00:00:00Z
 draft: false
 ---
 
-Hi, I'm Alex - a DevOps / Cloud Infrastructure engineer.
+Hi, I'm Alexander - a DevOps engineer with 5 years of experience.
 
 This blog is itself a production-grade infrastructure project. Every post is an opportunity to explore real architecture decisions, not just toy examples.
 
