@@ -156,6 +156,15 @@ resource "aws_cloudfront_response_headers_policy" "blog" {
     }
 
     content_security_policy {
+      # script-src keeps 'unsafe-inline' rather than per-script hashes:
+      # PaperMod renders several inline <script> blocks on every page
+      # (theme-detect, scroll-to-top, theme-toggle, menu scroll), and CSP2+
+      # browsers ignore 'unsafe-inline' entirely once any hash-source is
+      # present, so a partial hash list (e.g. just the mermaid loader) would
+      # silently break those. There's no user-generated content on this site
+      # (single author, no comments) and markdown already renders raw HTML
+      # unescaped (`goldmark.renderer.unsafe: true`), so 'unsafe-inline' adds
+      # negligible attack surface beyond what the author already has.
       content_security_policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; frame-ancestors 'none';"
       override                = true
     }

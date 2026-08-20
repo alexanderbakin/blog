@@ -9,8 +9,8 @@ data "tls_certificate" "github_oidc" {
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.create_github_actions_role ? 1 : 0
 
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
   # Include all certificates in the chain so thumbprint survives rotations
   thumbprint_list = [for c in data.tls_certificate.github_oidc[0].certificates : c.sha1_fingerprint]
 }
@@ -91,10 +91,50 @@ data "aws_iam_policy_document" "terraform_infra" {
     ]
   }
 
-  # CloudFront management
+  # CloudFront management — scoped to the actions the managed resources
+  # (distribution, OAC, function, cache policy, response headers policy)
+  # actually use. CloudFront doesn't support resource-level ARNs for most
+  # of these (create actions target a not-yet-existing resource), so the
+  # resource stays "*"; the action list is what keeps this from being a
+  # blanket grant over unrelated CloudFront features (key groups, field-level
+  # encryption, real-time logs, streaming distributions, etc).
   statement {
     actions = [
-      "cloudfront:*",
+      "cloudfront:CreateDistribution",
+      "cloudfront:CreateDistributionWithTags",
+      "cloudfront:GetDistribution",
+      "cloudfront:GetDistributionConfig",
+      "cloudfront:UpdateDistribution",
+      "cloudfront:DeleteDistribution",
+      "cloudfront:ListDistributions",
+      "cloudfront:TagResource",
+      "cloudfront:UntagResource",
+      "cloudfront:ListTagsForResource",
+      "cloudfront:CreateOriginAccessControl",
+      "cloudfront:GetOriginAccessControl",
+      "cloudfront:GetOriginAccessControlConfig",
+      "cloudfront:UpdateOriginAccessControl",
+      "cloudfront:DeleteOriginAccessControl",
+      "cloudfront:ListOriginAccessControls",
+      "cloudfront:CreateFunction",
+      "cloudfront:GetFunction",
+      "cloudfront:DescribeFunction",
+      "cloudfront:UpdateFunction",
+      "cloudfront:DeleteFunction",
+      "cloudfront:PublishFunction",
+      "cloudfront:ListFunctions",
+      "cloudfront:CreateCachePolicy",
+      "cloudfront:GetCachePolicy",
+      "cloudfront:GetCachePolicyConfig",
+      "cloudfront:UpdateCachePolicy",
+      "cloudfront:DeleteCachePolicy",
+      "cloudfront:ListCachePolicies",
+      "cloudfront:CreateResponseHeadersPolicy",
+      "cloudfront:GetResponseHeadersPolicy",
+      "cloudfront:GetResponseHeadersPolicyConfig",
+      "cloudfront:UpdateResponseHeadersPolicy",
+      "cloudfront:DeleteResponseHeadersPolicy",
+      "cloudfront:ListResponseHeadersPolicies",
     ]
     resources = ["*"]
   }
@@ -113,45 +153,138 @@ data "aws_iam_policy_document" "terraform_infra" {
     resources = ["*"]
   }
 
-  # Route53 management
+  # Route53 management — the zone/change IDs aren't known ahead of creation,
+  # so the resource stays wildcarded within the hostedzone/change namespaces,
+  # but scoping the resource type still keeps this role off Resolver, health
+  # checks, traffic policies, and query logging.
   statement {
     actions = [
-      "route53:*",
+      "route53:CreateHostedZone",
+      "route53:GetHostedZone",
+      "route53:DeleteHostedZone",
+      "route53:ListHostedZones",
+      "route53:ListHostedZonesByName",
+      "route53:ChangeResourceRecordSets",
+      "route53:ListResourceRecordSets",
+      "route53:ChangeTagsForResource",
+      "route53:ListTagsForResource",
     ]
-    resources = ["*"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:route53:::hostedzone/*",
+    ]
   }
 
-  # IAM management
   statement {
-    actions = [
-      "iam:*",
-    ]
-    resources = ["*"]
+    actions   = ["route53:GetChange"]
+    resources = ["arn:${data.aws_partition.current.partition}:route53:::change/*"]
   }
 
-  # SNS management
+  # IAM management — scoped to only the two roles and the OIDC provider this
+  # config manages. Deliberately NOT "iam:*" on "*": that would let this role
+  # grant itself AdministratorAccess or create a backdoor IAM user, turning a
+  # compromised PR/provider into a full account takeover.
   statement {
     actions = [
-      "sns:*",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:UpdateRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
     ]
-    resources = ["*"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${local.domain_slug}-terraform",
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${local.domain_slug}-deploy",
+    ]
   }
 
-  # CloudWatch management
   statement {
     actions = [
-      "cloudwatch:*",
-      "logs:*",
+      "iam:CreateOpenIDConnectProvider",
+      "iam:DeleteOpenIDConnectProvider",
+      "iam:GetOpenIDConnectProvider",
+      "iam:UpdateOpenIDConnectProviderThumbprint",
+      "iam:TagOpenIDConnectProvider",
+      "iam:UntagOpenIDConnectProvider",
+      "iam:AddClientIDToOpenIDConnectProvider",
+      "iam:RemoveClientIDFromOpenIDConnectProvider",
     ]
-    resources = ["*"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+    ]
   }
 
-  # Budgets management
+  # SNS management — scoped to the one alerts topic this config creates.
+  # Subscribe/TagResource/etc. take the topic ARN, but Unsubscribe and
+  # GetSubscriptionAttributes act on the *subscription* ARN, which has an
+  # unpredictable ID suffix (topic-arn:uuid) — so that needs its own
+  # statement with a trailing wildcard rather than the exact topic ARN.
   statement {
     actions = [
-      "budgets:*",
+      "sns:CreateTopic",
+      "sns:DeleteTopic",
+      "sns:GetTopicAttributes",
+      "sns:SetTopicAttributes",
+      "sns:Subscribe",
+      "sns:ListSubscriptionsByTopic",
+      "sns:TagResource",
+      "sns:UntagResource",
+      "sns:ListTagsForResource",
     ]
-    resources = ["*"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.domain_slug}-alerts",
+    ]
+  }
+
+  statement {
+    actions = [
+      "sns:GetSubscriptionAttributes",
+      "sns:SetSubscriptionAttributes",
+      "sns:Unsubscribe",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.domain_slug}-alerts:*",
+    ]
+  }
+
+  # CloudWatch management — scoped to the one dashboard and one alarm this
+  # config creates. (No CloudWatch Logs resources exist anywhere in this
+  # config — CloudFront access logs go to S3 — so no "logs:*" is needed.)
+  statement {
+    actions = [
+      "cloudwatch:PutDashboard",
+      "cloudwatch:GetDashboard",
+      "cloudwatch:DeleteDashboards",
+      "cloudwatch:ListDashboards",
+      "cloudwatch:PutMetricAlarm",
+      "cloudwatch:DescribeAlarms",
+      "cloudwatch:DeleteAlarms",
+      "cloudwatch:TagResource",
+      "cloudwatch:UntagResource",
+      "cloudwatch:ListTagsForResource",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${local.domain_slug}-dashboard",
+      "arn:${data.aws_partition.current.partition}:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:${var.domain_name}-high-error-rate",
+    ]
+  }
+
+  # Budgets management — AWS Budgets only exposes these two coarse actions;
+  # scoped to the one budget this config creates.
+  statement {
+    actions = [
+      "budgets:ViewBudget",
+      "budgets:ModifyBudget",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:budgets::${data.aws_caller_identity.current.account_id}:budget/${local.domain_slug}-monthly-budget",
+    ]
   }
 
   # S3 logs bucket management

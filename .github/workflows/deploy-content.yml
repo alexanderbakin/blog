@@ -85,6 +85,7 @@ jobs:
           aws s3 sync hugo-site/public/ \
             s3://${{ vars.S3_BUCKET }}/ \
             --delete \
+            --exclude "*" \
             --include "*.html" \
             --include "*.xml" \
             --cache-control "public, max-age=${{ env.HTML_CACHE_MAX_AGE }}, must-revalidate" \
