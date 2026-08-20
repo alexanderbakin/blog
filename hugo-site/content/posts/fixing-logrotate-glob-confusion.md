@@ -1,5 +1,5 @@
 ---
-title: "Fixing logrotate's Glob Confusion: A PR a Year in the Making"
+title: "Fixing logrotate's Glob Confusion"
 slug: "logrotate-fix"
 date: 2026-08-20T00:00:00Z
 draft: false
@@ -42,9 +42,11 @@ That's a meaningfully worse failure mode than what I saw last year. It isn't jus
 
 ## The Fix
 
+![Terminal screenshot: reproducing the bug with logrotate --force removing a.example.com and b.example.com's rotated logs as "wrong file" when rotating the literal *.example.com log, and the one-line fix wrapping the glob pattern in globEscape()](/images/logrotate-fix-terminal.png)
+
 The fix escapes glob metacharacters when building these internal bookkeeping patterns, so a log's own basename is matched literally instead of glob-interpreted. I added a regression test that reproduces the exact scenario: three logs, `a.example.com`, `b.example.com`, and the literal `*.example.com`, all under `dateext` with `rotate 3`. Before the fix, rotating the `*.example.com` entry deletes rotated copies that `a.` and `b.`'s logs had just correctly kept. After the fix, it doesn't touch them.
 
-Opened it as [logrotate/logrotate#722](https://github.com/logrotate/logrotate/pull/722): +147/-7.
+Opened it as [logrotate/logrotate#722](https://github.com/logrotate/logrotate/pull/722) (+147/-7).
 
 ## Why This Took a Year
 
