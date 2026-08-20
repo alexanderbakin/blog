@@ -242,15 +242,18 @@ data "aws_iam_policy_document" "terraform_infra" {
     ]
   }
 
+  # Unlike topic-level actions above, SNS subscription actions don't support
+  # resource-level scoping in identity-based policies — confirmed via
+  # simulate-custom-policy and a live apply, both denying a scoped
+  # "topic-arn:*" (and even an explicit "*") resource once --resource-arns
+  # was the actual subscription ARN. AWS requires Resource = "*" here.
   statement {
     actions = [
       "sns:GetSubscriptionAttributes",
       "sns:SetSubscriptionAttributes",
       "sns:Unsubscribe",
     ]
-    resources = [
-      "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.domain_slug}-alerts:*",
-    ]
+    resources = ["*"]
   }
 
   # CloudWatch management — scoped to the one dashboard and one alarm this
@@ -275,12 +278,16 @@ data "aws_iam_policy_document" "terraform_infra" {
     ]
   }
 
-  # Budgets management — AWS Budgets only exposes these two coarse actions;
-  # scoped to the one budget this config creates.
+  # Budgets management — scoped to the one budget this config creates.
+  # TagResource/UntagResource/ListTagsForResource are required because the
+  # provider's default_tags applies tags to the budget on create/update.
   statement {
     actions = [
       "budgets:ViewBudget",
       "budgets:ModifyBudget",
+      "budgets:TagResource",
+      "budgets:UntagResource",
+      "budgets:ListTagsForResource",
     ]
     resources = [
       "arn:${data.aws_partition.current.partition}:budgets::${data.aws_caller_identity.current.account_id}:budget/${local.domain_slug}-monthly-budget",
