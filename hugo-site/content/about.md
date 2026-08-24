@@ -14,4 +14,4 @@ I'm Alexander - a DevOps Engineer with 5 years of experience, passionate about b
 
 **This blog**: Built from scratch with Terraform + Hugo, deployed through GitHub Actions with OIDC, served from CloudFront with S3 origin and geo-restriction. [Check out the architecture](/meta/).
 
-[GitHub](https://github.com/alexanderbakin) · [LinkedIn](https://www.linkedin.com/in/bakin-alexander/)
+[GitHub](https://github.com/alexanderbakin) · [LinkedIn](https://www.linkedin.com/in/bakin-alexander/) · <a href="/cv.pdf" download="Alexander_Bakin_DevOps_CV.pdf">Resume (PDF)</a>

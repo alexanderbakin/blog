@@ -78,6 +78,7 @@ jobs:
             --cache-control "public, max-age=${{ env.ASSETS_CACHE_MAX_AGE }}, must-revalidate" \
             --exclude "*.html" \
             --exclude "*.xml" \
+            --exclude "cv.pdf" \
             --no-progress
 
       - name: Sync HTML to S3
@@ -90,6 +91,18 @@ jobs:
             --include "*.xml" \
             --cache-control "public, max-age=${{ env.HTML_CACHE_MAX_AGE }}, must-revalidate" \
             --no-progress
+
+      # cv.pdf gets its own upload (not the generic sync) so we can set
+      # Content-Disposition — this makes direct downloads (e.g. a bare
+      # link pasted on LinkedIn) save as "Alexander_Bakin_DevOps_CV.pdf"
+      # instead of "cv.pdf".
+      - name: Sync Resume PDF to S3
+        run: |
+          aws s3 cp hugo-site/public/cv.pdf \
+            s3://${{ vars.S3_BUCKET }}/cv.pdf \
+            --cache-control "public, max-age=${{ env.ASSETS_CACHE_MAX_AGE }}, must-revalidate" \
+            --content-type "application/pdf" \
+            --content-disposition 'attachment; filename="Alexander_Bakin_DevOps_CV.pdf"'
 
       # Invalidate CloudFront edge cache
       - name: Invalidate CloudFront
